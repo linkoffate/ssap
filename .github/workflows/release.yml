@@ -1,0 +1,77 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: swift build -c release
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          cp .build/release/ssap dist/
+          cd dist && tar czf ssap-${GITHUB_REF_NAME}-arm64-macos.tar.gz ssap
+          shasum -a 256 ssap-${GITHUB_REF_NAME}-arm64-macos.tar.gz > ssap-${GITHUB_REF_NAME}-arm64-macos.tar.gz.sha256
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/ssap-*.tar.gz
+            dist/ssap-*.sha256
+
+      - name: Update Homebrew formula
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          if [ -z "$TAP_TOKEN" ]; then
+            echo "TAP_TOKEN not set, skipping Homebrew update"
+            exit 0
+          fi
+          VERSION=${GITHUB_REF_NAME#v}
+          SHA256=$(cat dist/ssap-${GITHUB_REF_NAME}-arm64-macos.tar.gz.sha256 | awk '{print $1}')
+          URL="https://github.com/linkoffate/ssap/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+
+          # Fetch source tarball SHA (Homebrew builds from source)
+          SOURCE_SHA=$(curl -sL "$URL" | shasum -a 256 | awk '{print $1}')
+
+          FORMULA="class Ssap < Formula
+            desc \"Lightweight macOS screenshot organizer with auto-sort and tagging\"
+            homepage \"https://github.com/linkoffate/ssap\"
+            url \"$URL\"
+            sha256 \"$SOURCE_SHA\"
+            license \"MIT\"
+
+            depends_on xcode: [\"15.0\", :build]
+            depends_on :macos
+
+            def install
+              system \"swift\", \"build\", \"-c\", \"release\", \"--disable-sandbox\"
+              bin.install \".build/release/ssap\"
+            end
+
+            test do
+              assert_match \"ssap\", shell_output(\"#{bin}/ssap --version\")
+            end
+          end"
+
+          # Push to tap repo
+          git clone https://x-access-token:${TAP_TOKEN}@github.com/linkoffate/homebrew-tap.git /tmp/tap
+          mkdir -p /tmp/tap/Formula
+          echo "$FORMULA" > /tmp/tap/Formula/ssap.rb
+          cd /tmp/tap
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add Formula/ssap.rb
+          git commit -m "Update ssap to ${VERSION}" || exit 0
+          git push
