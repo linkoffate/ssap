@@ -1,0 +1,15 @@
+# ssap configuration
+watch_dir: ~/Screenshots
+organize: true        # auto-sort into YYYY/MM
+prompt: true          # show tag dialog on new screenshot
+delete_prompt: true   # include Delete button for mistakes
+
+tag_presets:
+  - troubleshooting
+  - incident
+  - reference
+  - meeting
+  - personal
+
+archive:
+  preserve_xattrs: true
