@@ -16,6 +16,16 @@ Auto-sorts screenshots into `YYYY/MM` directories, tags via native macOS xattr, 
 
 ## Install
 
+### Homebrew
+
+```bash
+brew tap linkoffate/tap
+brew install ssap
+ssap install    # sets up LaunchAgent + screenshot location
+```
+
+### From source
+
 ```bash
 git clone https://github.com/linkoffate/ssap.git
 cd ssap
