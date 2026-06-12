@@ -7,7 +7,7 @@ struct Ssap: ParsableCommand {
         commandName: "ssap",
         abstract: "Screenshot Snap, Annotate, Place — macOS screenshot organizer",
         version: "0.1.0",
-        subcommands: [Watch.self, Prompt.self, Tag.self, Search.self, Install.self, Uninstall.self, Archive.self],
+        subcommands: [Watch.self, Prompt.self, Tag.self, Rename.self, Search.self, Install.self, Uninstall.self, Archive.self],
         defaultSubcommand: Watch.self
     )
 }
@@ -54,6 +54,26 @@ struct Tag: ParsableCommand {
         let path = (file as NSString).expandingTildeInPath
         try Tagger.applyTags(tags, to: path)
         print("ssap: tagged \(path) with \(tags.joined(separator: ", "))")
+    }
+}
+
+struct Rename: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Rename a screenshot (tags are preserved)")
+
+    @Argument(help: "Path to the screenshot file")
+    var file: String
+
+    @Argument(help: "New file name (extension optional — original is kept if omitted)")
+    var name: String
+
+    func run() throws {
+        let path = (file as NSString).expandingTildeInPath
+        let newPath = try Renamer.rename(file: path, to: name)
+        if newPath == path {
+            print("ssap: name unchanged")
+        } else {
+            print("ssap: renamed to \(newPath)")
+        }
     }
 }
 
