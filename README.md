@@ -41,6 +41,7 @@ Requires macOS 13+ and Swift 5.9+.
 ssap watch              # start watching (default command)
 ssap prompt <file>      # manually open tag prompt for a file
 ssap tag <file> <tags>  # tag from CLI
+ssap rename <file> <name>  # rename a screenshot (tags kept; extension kept if omitted)
 ssap search <tag>       # find screenshots by tag (Spotlight)
 ssap archive <year>     # compress a year to tar.gz
 ssap install            # install LaunchAgent + set screenshot location

@@ -44,16 +44,25 @@ class TagPromptViewModel: ObservableObject {
     @Published var availableTags: [String]
     @Published var selectedTags: Set<String> = []
     @Published var customTag: String = ""
+    /// Editable file name (without extension). Prefilled with the current name —
+    /// which carries the date prefix — so the user can edit freely or leave it.
+    @Published var editableName: String
 
     init(filePath: String, availableTags: [String], showDelete: Bool, window: NSWindow) {
         self.filePath = filePath
         self.availableTags = availableTags
         self.showDelete = showDelete
         self.window = window
+        self.editableName = (((filePath as NSString).lastPathComponent) as NSString).deletingPathExtension
     }
 
     var filename: String {
         (filePath as NSString).lastPathComponent
+    }
+
+    /// File extension (e.g. "png"), shown next to the name field as a read-only hint.
+    var fileExtension: String {
+        (filePath as NSString).pathExtension
     }
 
     func addCustomTag() {
@@ -67,8 +76,15 @@ class TagPromptViewModel: ObservableObject {
     }
 
     func save() {
+        // Rename first so tags land on the final path. Renamer is a no-op when the
+        // name is unchanged, and preserves the extension if the user dropped it.
+        var targetPath = filePath
+        let desired = editableName.trimmingCharacters(in: .whitespaces)
+        if !desired.isEmpty, let renamed = try? Renamer.rename(file: filePath, to: desired) {
+            targetPath = renamed
+        }
         if !selectedTags.isEmpty {
-            try? Tagger.applyTags(Array(selectedTags), to: filePath)
+            try? Tagger.applyTags(Array(selectedTags), to: targetPath)
         }
         close()
     }
@@ -103,12 +119,17 @@ struct TagPromptView: View {
                     .shadow(radius: 2)
             }
 
-            // Filename
-            Text(viewModel.filename)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            // Editable file name (extension shown read-only)
+            HStack(spacing: 4) {
+                TextField("File name", text: $viewModel.editableName)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption)
+                if !viewModel.fileExtension.isEmpty {
+                    Text(".\(viewModel.fileExtension)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
 
             Divider()
 
