@@ -30,9 +30,18 @@ jobs:
             dist/ssap-*.tar.gz
             dist/ssap-*.sha256
 
+      - name: Generate tap token
+        id: tap_token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: linkoffate
+          repositories: homebrew-tap
+
       - name: Update Homebrew formula
         env:
-          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          TAP_TOKEN: ${{ steps.tap_token.outputs.token }}
         run: |
           if [ -z "$TAP_TOKEN" ]; then
             echo "TAP_TOKEN not set, skipping Homebrew update"
