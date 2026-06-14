@@ -6,7 +6,7 @@ struct Ssap: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ssap",
         abstract: "Screenshot Snap, Annotate, Place — macOS screenshot organizer",
-        version: "0.1.0",
+        version: "0.2.0",
         subcommands: [Watch.self, Prompt.self, Tag.self, Rename.self, Search.self, Install.self, Uninstall.self, Archive.self],
         defaultSubcommand: Watch.self
     )
